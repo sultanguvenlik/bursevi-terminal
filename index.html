@@ -228,10 +228,10 @@
             let sig = "SİNYAL: NÖTR";
             let sigType = "neutral";
             // Kripto dinamiklerine göre optimize edilmiş 55 eşik değeri
-            if (wt.isBull && wt.wt1 <= -55) {
+            if (wt.isBull && wt.wt1 <= -35) {
                 sig = "DİP AL 💎";
                 sigType = "dip";
-            } else if (!wt.isBull && wt.wt1 >= 55) {
+            } else if (!wt.isBull && wt.wt1 >= 35) {
                 sig = "TEPE SAT 🔥";
                 sigType = "tepe";
             }
