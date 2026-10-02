@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAVZA AKADEMİ - BURSEVİ MASTER MATRIX TERMİNALİ</title>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #58a6ff;
+            font-size: 22px;
+            margin: 0;
+        }
+        .status-bar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            font-size: 14px;
+        }
+        .btn {
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .btn:hover { background-color: #2ea043; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #161b22;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        th, td {
+            padding: 14px 15px;
+            text-align: left;
+            border-bottom: 1px solid #30363d;
+            font-size: 13px;
+        }
+        th {
+            background-color: #21262d;
+            color: #8b949e;
+            font-weight: 600;
+        }
+        tr:hover { background-color: #1f242c; }
+        .sub-matrix {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .timeframe-card {
+            background: #21262d;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+            font-size: 12px;
+            text-align: center;
+        }
+        .tf-title { color: #58a6ff; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #30363d; padding-bottom: 3px; }
+        .bull { color: #3fb950; font-weight: bold; }
+        .bear { color: #f85149; font-weight: bold; }
+        .neutral { color: #8b949e; }
+        .badge-dip { background: rgba(63, 185, 80, 0.2); color: #3fb950; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; margin-top: 2px;}
+        .badge-tepe { background: rgba(248, 81, 73, 0.2); color: #f85149; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; margin-top: 2px;}
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>🛡️ BURSEVİ MASTER MATRIX - MAJÖR KRİPTO TERMİNALİ</h1>
+        </div>
+        <div class="status-bar">
+            <span id="update-time">Son Güncelleme: --:--:--</span>
+            <span id="timer" style="color: #d29922;">Sıradaki Güncelleme: 60s</span>
+            <button class="btn" onclick="fetchAllData()">Verileri Yenile</button>
+        </div>
+    </header>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 12%;">SEMBOL</th>
+                <th style="width: 10%;">FİYAT</th>
+                <th style="width: 63%;">ZAMAN DİLİMİ MATRİSİ (HAFTALIK | GÜNLÜK | SAATLİK | 5 DAKİKA)</th>
+                <th style="width: 15%;">GENEL KARAR</th>
+            </tr>
+        </thead>
+        <tbody id="terminal-body">
+            <tr><td colspan="4" style="text-align: center; color: #58a6ff; padding: 30px;">Piyasa verileri güvenli tünel üzerinden yükleniyor...</td></tr>
+        </tbody>
+    </table>
+
+<script>
+    const symbols = [
+        "ETHUSDT", "BTCUSDT", "XRPUSDT", "SOLUSDT", 
+        "ADAUSDT", "BNBUSDT", "AVAXUSDT"
+    ];
+
+    let countdown = 60;
+
+    function calculateEMA(prices, period) {
+        if (prices.length < period) return prices[prices.length - 1];
+        let k = 2 / (period + 1);
+        let ema = prices.slice(0, period).reduce((a, b) => a + b, 0) / period;
+        for (let i = period; i < prices.length; i++) {
+            ema = (prices[i] * k) + (ema * (1 - k));
+        }
+        return ema;
+    }
+
+    function calculateWaveTrend(highs, lows, closes) {
+        let ap = closes.map((c, i) => (highs[i] + lows[i] + c) / 3);
+        let esa = [];
+        let k1 = 2 / 11;
+        esa[0] = ap[0];
+        for (let i = 1; i < ap.length; i++) {
+            esa[i] = (ap[i] * k1) + (esa[i-1] * (1 - k1));
+        }
+        let d_arr = ap.map((val, i) => Math.abs(val - esa[i]));
+        let d = [];
+        d[0] = d_arr[0];
+        for (let i = 1; i < d_arr.length; i++) {
+            d[i] = (d_arr[i] * k1) + (d[i-1] * (1 - k1));
+        }
+        let ci = ap.map((val, i) => d[i] !== 0 ? (val - esa[i]) / (0.015 * d[i]) : 0);
+        let k2 = 2 / 22;
+        let tci = [];
+        tci[0] = ci[0];
+        for (let i = 1; i < ci.length; i++) {
+            tci[i] = (ci[i] * k2) + (tci[i-1] * (1 - k2));
+        }
+        let wt1 = tci[tci.length - 1];
+        let wt2_slice = tci.slice(-4);
+        let wt2 = wt2_slice.reduce((a, b) => a + b, 0) / wt2_slice.length;
+        return { wt1, isBull: wt1 >= wt2 };
+    }
+
+    async function fetchTFData(symbol, interval) {
+        try {
+            // CORS engeline takılmamak için en kararlı public tünel yönlendirmesi
+            let targetUrl = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=250`;
+            let proxyUrl = `https://api.allorigins.win/raw?url=` + encodeURIComponent(targetUrl);
+            
+            let res = await fetch(proxyUrl);
+            if (!res.ok) return null;
+            let data = await res.json();
+            
+            if (!Array.isArray(data) || data.length === 0) return null;
+
+            let closes = data.map(d => parseFloat(d[4]));
+            let highs = data.map(d => parseFloat(d[2]));
+            let lows = data.map(d => parseFloat(d[3]));
+            let currentPrice = closes[closes.length - 1];
+
+            let ema200 = calculateEMA(closes, 200);
+            let isTrendBull = currentPrice > ema200;
+            let wt = calculateWaveTrend(highs, lows, closes);
+
+            let sig = "NÖTR";
+            if (wt.isBull && wt.wt1 <= -60) sig = "DİP AL 💎";
+            else if (!wt.isBull && wt.wt1 >= 60) sig = "TEPE SAT 🔥";
+
+            return { isTrendBull, isTradeBull: wt.isBull, sig, price: currentPrice };
+        } catch (e) {
+            console.error(symbol, interval, e);
+            return null;
+        }
+    }
+
+    async function processSymbol(symbol) {
+        let w = await fetchTFData(symbol, "1w");
+        let d = await fetchTFData(symbol, "1d");
+        let h1 = await fetchTFData(symbol, "1h");
+        let m5 = await fetchTFData(symbol, "5m");
+
+        if (!w || !d || !h1 || !m5) return null;
+
+        let decision = "DİKKAT / NÖTR ⚠️";
+        let decColor = "#d29922";
+
+        if (m5.sig === "DİP AL 💎" || h1.sig === "DİP AL 💎") {
+            decision = "⚡ DİP AL FIRSATI 💎";
+            decColor = "#3fb950";
+        } else if (m5.sig === "TEPE SAT 🔥" || h1.sig === "TEPE SAT 🔥") {
+            decision = "⚡ TEPE SAT 🔥";
+            decColor = "#f85149";
+        } else if (h1.isTradeBull && m5.isTradeBull && (d.isTrendBull || h1.isTrendBull)) {
+            decision = "GÜÇLÜ LONG 🚀";
+            decColor = "#3fb950";
+        } else if (!h1.isTradeBull && !m5.isTradeBull && (!d.isTrendBull || !h1.isTrendBull)) {
+            decision = "GÜÇLÜ SHORT 🔻";
+            decColor = "#f85149";
+        } else if (h1.isTradeBull && m5.isTradeBull) {
+            decision = "SCALP LONG ⚡";
+            decColor = "#00e5ff";
+        } else {
+            decision = "SCALP SHORT ⚡";
+            decColor = "#ff9100";
+        }
+
+        return {
+            symbol: symbol.replace("USDT", ""),
+            price: h1.price,
+            tf: { w, d, h1, m5 },
+            decision,
+            decColor
+        };
+    }
+
+    function renderCard(tfName, data) {
+        let trendHtml = data.isTrendBull ? '<span class="bull">T:YÜKSELİŞ</span>' : '<span class="bear">T:DÜŞÜŞ</span>';
+        let tradeHtml = data.isTradeBull ? '<span class="bull">İ:BOĞA</span>' : '<span class="bear">İ:AYI</span>';
+        let sigHtml = data.sig === "DİP AL 💎" ? '<span class="badge-dip">DİP AL</span>' : (data.sig === "TEPE SAT 🔥" ? '<span class="badge-tepe">TEPE SAT</span>' : '<span class="neutral">NÖTR</span>');
+        
+        return `
+            <div class="timeframe-card">
+                <div class="tf-title">${tfName}</div>
+                <div>${trendHtml}</div>
+                <div>${tradeHtml}</div>
+                <div style="margin-top: 4px;">${sigHtml}</div>
+            </div>
+        `;
+    }
+
+    async function fetchAllData() {
+        let tbody = document.getElementById('terminal-body');
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #58a6ff; padding: 20px;">Majör coinler taranıyor, veriler çekiliyor...</td></tr>`;
+
+        let htmlContent = "";
+        for (let sym of symbols) {
+            let res = await processSymbol(sym);
+            if (res) {
+                let priceStr = res.price > 10 ? res.price.toFixed(2) : res.price.toFixed(4);
+                htmlContent += `
+                    <tr>
+                        <td><strong>${res.symbol}</strong></td>
+                        <td>$${priceStr}</td>
+                        <td>
+                            <div class="sub-matrix">
+                                ${renderCard("HAFTALIK", res.tf.w)}
+                                ${renderCard("GÜNLÜK", res.tf.d)}
+                                ${renderCard("SAATLİK", res.tf.h1)}
+                                ${renderCard("SCALP (5D)", res.tf.m5)}
+                            </div>
+                        </td>
+                        <td><strong style="color: ${res.decColor}">${res.decision}</strong></td>
+                    </tr>
+                `;
+            }
+        }
+        
+        if (htmlContent === "") {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #f85149; padding: 20px;">Veri alınamadı. İnternet bağlantınızı veya tarayıcı konsolunu kontrol edin.</td></tr>`;
+        } else {
+            tbody.innerHTML = htmlContent;
+        }
+
+        let now = new Date();
+        document.getElementById('update-time').innerText = `Son Güncelleme: ${now.toLocaleTimeString()}`;
+        countdown = 60;
+    }
+
+    setInterval(() => {
+        countdown--;
+        document.getElementById('timer').innerText = `Sıradaki Güncelleme: ${countdown}s`;
+        if (countdown <= 0) {
+            fetchAllData();
+        }
+    }, 1000);
+
+    fetchAllData();
+</script>
+
+</body>
+</html>
