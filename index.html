@@ -62,6 +62,11 @@
             font-weight: 600;
         }
         tr:hover { background-color: #1f242c; }
+        
+        /* Satır Sinyal Renklendirmeleri */
+        .row-dip { background-color: rgba(63, 185, 80, 0.12) !important; }
+        .row-tepe { background-color: rgba(248, 81, 73, 0.12) !important; }
+
         .sub-matrix {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -72,15 +77,15 @@
             padding: 8px 12px;
             border-radius: 6px;
             border: 1px solid #30363d;
-            font-size: 12px;
+            font-size: 11px;
             text-align: center;
         }
-        .tf-title { color: #58a6ff; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #30363d; padding-bottom: 3px; }
+        .tf-title { color: #58a6ff; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #30363d; padding-bottom: 3px; font-size: 12px; }
         .bull { color: #3fb950; font-weight: bold; }
         .bear { color: #f85149; font-weight: bold; }
         .neutral { color: #8b949e; }
-        .badge-dip { background: rgba(63, 185, 80, 0.2); color: #3fb950; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; margin-top: 2px;}
-        .badge-tepe { background: rgba(248, 81, 73, 0.2); color: #f85149; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; margin-top: 2px;}
+        .badge-dip { background: rgba(63, 185, 80, 0.25); color: #3fb950; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; margin-top: 4px; border: 1px solid #3fb950;}
+        .badge-tepe { background: rgba(248, 81, 73, 0.25); color: #f85149; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; margin-top: 4px; border: 1px solid #f85149;}
     </style>
 </head>
 <body>
@@ -172,11 +177,17 @@
             let isTrendBull = currentPrice > ema200;
             let wt = calculateWaveTrend(highs, lows, closes);
 
-            let sig = "NÖTR";
-            if (wt.isBull && wt.wt1 <= -60) sig = "DİP AL 💎";
-            else if (!wt.isBull && wt.wt1 >= 60) sig = "TEPE SAT 🔥";
+            let sig = "SİNYAL: NÖTR";
+            let sigType = "neutral";
+            if (wt.isBull && wt.wt1 <= -60) {
+                sig = "DİP AL 💎";
+                sigType = "dip";
+            } else if (!wt.isBull && wt.wt1 >= 60) {
+                sig = "TEPE SAT 🔥";
+                sigType = "tepe";
+            }
 
-            return { isTrendBull, isTradeBull: wt.isBull, sig, price: currentPrice };
+            return { isTrendBull, isTradeBull: wt.isBull, sig, sigType, price: currentPrice };
         } catch (e) {
             console.error(symbol, interval, e);
             return null;
@@ -193,13 +204,17 @@
 
         let decision = "DİKKAT / NÖTR ⚠️";
         let decColor = "#d29922";
+        let rowClass = "";
 
-        if (m5.sig === "DİP AL 💎" || h1.sig === "DİP AL 💎") {
+        // Sinyal öncelikli karar ve satır boyama kontrolü
+        if (m5.sigType === "dip" || h1.sigType === "dip" || d.sigType === "dip") {
             decision = "⚡ DİP AL FIRSATI 💎";
             decColor = "#3fb950";
-        } else if (m5.sig === "TEPE SAT 🔥" || h1.sig === "TEPE SAT 🔥") {
+            rowClass = "row-dip";
+        } else if (m5.sigType === "tepe" || h1.sigType === "tepe" || d.sigType === "tepe") {
             decision = "⚡ TEPE SAT 🔥";
             decColor = "#f85149";
+            rowClass = "row-tepe";
         } else if (h1.isTradeBull && m5.isTradeBull && (d.isTrendBull || h1.isTrendBull)) {
             decision = "GÜÇLÜ LONG 🚀";
             decColor = "#3fb950";
@@ -219,21 +234,28 @@
             price: h1.price,
             tf: { w, d, h1, m5 },
             decision,
-            decColor
+            decColor,
+            rowClass
         };
     }
 
     function renderCard(tfName, data) {
-        let trendHtml = data.isTrendBull ? '<span class="bull">T:YÜKSELİŞ</span>' : '<span class="bear">T:DÜŞÜŞ</span>';
-        let tradeHtml = data.isTradeBull ? '<span class="bull">İ:BOĞA</span>' : '<span class="bear">İ:AYI</span>';
-        let sigHtml = data.sig === "DİP AL 💎" ? '<span class="badge-dip">DİP AL</span>' : (data.sig === "TEPE SAT 🔥" ? '<span class="badge-tepe">TEPE SAT</span>' : '<span class="neutral">NÖTR</span>');
+        let trendHtml = data.isTrendBull ? '<span class="bull">TREND: YÜKSELİŞ</span>' : '<span class="bear">TREND: DÜŞÜŞ</span>';
+        let tradeHtml = data.isTradeBull ? '<span class="bull">İŞLEM: BOĞA</span>' : '<span class="bear">İŞLEM: AYI</span>';
+        
+        let sigHtml = '<span class="neutral">SİNYAL: NÖTR</span>';
+        if (data.sigType === "dip") {
+            sigHtml = '<span class="badge-dip">DİP AL 💎</span>';
+        } else if (data.sigType === "tepe") {
+            sigHtml = '<span class="badge-tepe">TEPE SAT 🔥</span>';
+        }
         
         return `
             <div class="timeframe-card">
                 <div class="tf-title">${tfName}</div>
                 <div>${trendHtml}</div>
                 <div>${tradeHtml}</div>
-                <div style="margin-top: 4px;">${sigHtml}</div>
+                <div style="margin-top: 5px;">${sigHtml}</div>
             </div>
         `;
     }
@@ -248,7 +270,7 @@
             if (res) {
                 let priceStr = res.price > 10 ? res.price.toFixed(2) : res.price.toFixed(4);
                 htmlContent += `
-                    <tr>
+                    <tr class="${res.rowClass}">
                         <td><strong>${res.symbol}</strong></td>
                         <td>$${priceStr}</td>
                         <td>
@@ -266,7 +288,7 @@
         }
         
         if (htmlContent === "") {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #f85149; padding: 20px;">Veri alınamadı. Lütfen GitHub Pages linkiniz üzerinden açtığınızdan emin olun.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #f85149; padding: 20px;">Veri alınamadı. Lütfen GitHub Pages üzerinden açtığınızdan emin olun.</td></tr>`;
         } else {
             tbody.innerHTML = htmlContent;
         }
