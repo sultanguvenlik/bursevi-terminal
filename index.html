@@ -84,15 +84,14 @@
             font-weight: 600;
         }
         tr:hover { background-color: #1f242c; }
-        
-        .row-dip { background-color: rgba(63, 185, 80, 0.12) !important; }
-        .row-tepe { background-color: rgba(248, 81, 73, 0.12) !important; }
 
         .sub-matrix {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
         }
+        
+        /* Zaman Dilimi Kartları ve Canlı Sinyal Renkleri */
         .timeframe-card {
             background: #21262d;
             padding: 8px 12px;
@@ -100,13 +99,25 @@
             border: 1px solid #30363d;
             font-size: 11px;
             text-align: center;
+            transition: all 0.3s ease;
         }
+        .card-dip {
+            background: rgba(0, 255, 100, 0.25) !important;
+            border-color: #00ff64 !important;
+            box-shadow: 0 0 10px rgba(0, 255, 100, 0.3);
+        }
+        .card-tepe {
+            background: rgba(255, 50, 50, 0.25) !important;
+            border-color: #ff3232 !important;
+            box-shadow: 0 0 10px rgba(255, 50, 50, 0.3);
+        }
+
         .tf-title { color: #58a6ff; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #30363d; padding-bottom: 3px; font-size: 12px; }
         .bull { color: #3fb950; font-weight: bold; }
         .bear { color: #f85149; font-weight: bold; }
         .neutral { color: #8b949e; }
-        .badge-dip { background: rgba(63, 185, 80, 0.25); color: #3fb950; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; margin-top: 4px; border: 1px solid #3fb950;}
-        .badge-tepe { background: rgba(248, 81, 73, 0.25); color: #f85149; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; margin-top: 4px; border: 1px solid #f85149;}
+        .badge-dip { background: rgba(0, 255, 100, 0.3); color: #00ff64; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; margin-top: 4px; border: 1px solid #00ff64;}
+        .badge-tepe { background: rgba(255, 50, 50, 0.3); color: #ff5050; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; margin-top: 4px; border: 1px solid #ff5050;}
         .change-pos { color: #3fb950; font-weight: bold; }
         .change-neg { color: #f85149; font-weight: bold; }
     </style>
@@ -155,7 +166,6 @@
     let currentFilter = 'ALL';
     let globalMarketData = [];
 
-    // Web Audio API ile hafif bildirim sesi (Bip)
     function playBeep() {
         try {
             let ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -164,7 +174,7 @@
             osc.connect(gain);
             gain.connect(ctx.destination);
             osc.type = 'sine';
-            osc.frequency.value = 880; // La (A5) nota frekansı
+            osc.frequency.value = 880;
             gain.gain.setValueAtTime(0.1, ctx.currentTime);
             osc.start();
             osc.stop(ctx.currentTime + 0.15);
@@ -227,7 +237,7 @@
 
             let sig = "SİNYAL: NÖTR";
             let sigType = "neutral";
-            // Kripto dinamiklerine göre optimize edilmiş 55 eşik değeri
+            // Test amaçlı 35 eşik değeri
             if (wt.isBull && wt.wt1 <= -35) {
                 sig = "DİP AL 💎";
                 sigType = "dip";
@@ -265,19 +275,14 @@
 
         let decision = "DİKKAT / NÖTR ⚠️";
         let decColor = "#d29922";
-        let rowClass = "";
-        let hasSignal = false;
+        let hasSignal = w.sigType !== "neutral" || d.sigType !== "neutral" || h1.sigType !== "neutral" || m5.sigType !== "neutral";
 
         if (m5.sigType === "dip" || h1.sigType === "dip" || d.sigType === "dip") {
             decision = "⚡ DİP AL FIRSATI 💎";
-            decColor = "#3fb950";
-            rowClass = "row-dip";
-            hasSignal = true;
+            decColor = "#00ff64";
         } else if (m5.sigType === "tepe" || h1.sigType === "tepe" || d.sigType === "tepe") {
             decision = "⚡ TEPE SAT 🔥";
-            decColor = "#f85149";
-            rowClass = "row-tepe";
-            hasSignal = true;
+            decColor = "#ff3232";
         } else if (h1.isTradeBull && m5.isTradeBull && (d.isTrendBull || h1.isTrendBull)) {
             decision = "GÜÇLÜ LONG 🚀";
             decColor = "#3fb950";
@@ -299,7 +304,6 @@
             tf: { w, d, h1, m5 },
             decision,
             decColor,
-            rowClass,
             hasSignal,
             isLong: decision.includes("LONG") || decision.includes("DİP AL")
         };
@@ -310,14 +314,18 @@
         let tradeHtml = data.isTradeBull ? '<span class="bull">İŞLEM: BOĞA</span>' : '<span class="bear">İŞLEM: AYI</span>';
         
         let sigHtml = '<span class="neutral">SİNYAL: NÖTR</span>';
+        let cardClass = "timeframe-card";
+
         if (data.sigType === "dip") {
             sigHtml = '<span class="badge-dip">DİP AL 💎</span>';
+            cardClass += " card-dip";
         } else if (data.sigType === "tepe") {
             sigHtml = '<span class="badge-tepe">TEPE SAT 🔥</span>';
+            cardClass += " card-tepe";
         }
         
         return `
-            <div class="timeframe-card">
+            <div class="${cardClass}">
                 <div class="tf-title">${tfName}</div>
                 <div>${trendHtml}</div>
                 <div>${tradeHtml}</div>
@@ -359,7 +367,7 @@
             if (res.hasSignal) alertTriggered = true;
 
             htmlContent += `
-                <tr class="${res.rowClass}">
+                <tr>
                     <td><strong>${res.symbol}</strong></td>
                     <td>
                         $${priceStr}<br>
@@ -404,7 +412,7 @@
 
         let now = new Date();
         document.getElementById('update-time').innerText = `Son Güncelleme: ${now.toLocaleTimeString()}`;
-        countdown = 30; // 30 saniye optimize güncelleme periyodu
+        countdown = 30;
     }
 
     setInterval(() => {
