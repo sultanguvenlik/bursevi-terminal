@@ -106,7 +106,7 @@
             </tr>
         </thead>
         <tbody id="terminal-body">
-            <tr><td colspan="4" style="text-align: center; color: #58a6ff; padding: 30px;">Piyasa verileri güvenli tünel üzerinden yükleniyor...</td></tr>
+            <tr><td colspan="4" style="text-align: center; color: #58a6ff; padding: 30px;">Canlı sunucu üzerinden veriler yükleniyor...</td></tr>
         </tbody>
     </table>
 
@@ -157,11 +157,7 @@
 
     async function fetchTFData(symbol, interval) {
         try {
-            // CORS engeline takılmamak için en kararlı public tünel yönlendirmesi
-            let targetUrl = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=250`;
-            let proxyUrl = `https://api.allorigins.win/raw?url=` + encodeURIComponent(targetUrl);
-            
-            let res = await fetch(proxyUrl);
+            let res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=250`);
             if (!res.ok) return null;
             let data = await res.json();
             
@@ -270,7 +266,7 @@
         }
         
         if (htmlContent === "") {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #f85149; padding: 20px;">Veri alınamadı. İnternet bağlantınızı veya tarayıcı konsolunu kontrol edin.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #f85149; padding: 20px;">Veri alınamadı. Lütfen GitHub Pages linkiniz üzerinden açtığınızdan emin olun.</td></tr>`;
         } else {
             tbody.innerHTML = htmlContent;
         }
