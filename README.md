@@ -1,1 +1,0 @@
-# bursevi-terminal
