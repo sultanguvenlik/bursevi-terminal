@@ -130,7 +130,7 @@
         </div>
         <div class="status-bar">
             <span id="update-time">Son Güncelleme: --:--:--</span>
-            <span id="timer" style="color: #d29922;">Sıradaki Güncelleme: 30s</span>
+            <span id="timer" style="color: #d29922;">Sıradaki Güncelleme: 60s</span>
             <button class="btn" onclick="requestNotificationPermission()">Bildirim İzni Al</button>
             <button class="btn" onclick="fetchAllData()">Verileri Yenile</button>
         </div>
@@ -257,10 +257,10 @@
 
             let sig = "SİNYAL: NÖTR";
             let sigType = "neutral";
-            if (wt.isBull && wt.wt1 <= -35) {
+            if (wt.isBull && wt.wt1 <= -50) {
                 sig = "DİP AL 💎";
                 sigType = "dip";
-            } else if (!wt.isBull && wt.wt1 >= 35) {
+            } else if (!wt.isBull && wt.wt1 >= 50) {
                 sig = "TEPE SAT 🔥";
                 sigType = "tepe";
             }
@@ -436,7 +436,7 @@
 
         let now = new Date();
         document.getElementById('update-time').innerText = `Son Güncelleme: ${now.toLocaleTimeString()}`;
-        countdown = 30;
+        countdown = 60;
     }
 
     setInterval(() => {
