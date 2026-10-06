@@ -92,10 +92,10 @@
         }
         .timeframe-card {
             background: #21262d;
-            padding: 8px 12px;
+            padding: 10px 14px;
             border-radius: 6px;
             border: 1px solid #30363d;
-            font-size: 11px;
+            font-size: 13px; /* Kart içi yazı boyutu büyütüldü */
             text-align: center;
             transition: all 0.3s ease;
         }
@@ -110,17 +110,17 @@
             box-shadow: 0 0 12px rgba(255, 50, 50, 0.35);
         }
 
-        .tf-title { color: #58a6ff; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #30363d; padding-bottom: 3px; font-size: 12px; }
+        .tf-title { color: #58a6ff; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #30363d; padding-bottom: 4px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
         .bull { color: #3fb950; font-weight: bold; }
         .bear { color: #f85149; font-weight: bold; }
         .neutral { color: #8b949e; }
-        .badge-dip { background: rgba(0, 255, 100, 0.35); color: #00ff64; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; margin-top: 4px; border: 1px solid #00ff64;}
-        .badge-tepe { background: rgba(255, 50, 50, 0.35); color: #ff5050; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; margin-top: 4px; border: 1px solid #ff5050;}
+        .badge-dip { background: rgba(0, 255, 100, 0.35); color: #00ff64; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; border: 1px solid #00ff64;}
+        .badge-tepe { background: rgba(255, 50, 50, 0.35); color: #ff5050; padding: 2px 6px; border-radius: 3px; font-weight: bold; display: inline-block; border: 1px solid #ff5050;}
         .change-pos { color: #3fb950; font-weight: bold; }
         .change-neg { color: #f85149; font-weight: bold; }
         .symbol-link { color: #58a6ff; text-decoration: none; font-weight: bold; }
         .symbol-link:hover { text-decoration: underline; }
-        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     </style>
 </head>
 <body>
@@ -257,15 +257,15 @@
             let wt = calculateWaveTrend(highs, lows, closes);
 
             let emaDistPercent = ((currentPrice - ema200) / ema200) * 100;
-            let btVal = wt.wt1; // Bursevi Trend (WaveTrend) osilatör değeri
+            let btVal = wt.wt1;
 
-            let sig = "SİNYAL: NÖTR";
+            let sig = '<span class="neutral" style="font-size:11px;">NÖTR</span>';
             let sigType = "neutral";
             if (wt.isBull && wt.wt1 <= -55) {
-                sig = "DİP AL 💎";
+                sig = '<span class="badge-dip" style="font-size:11px;">DİP AL 💎</span>';
                 sigType = "dip";
             } else if (!wt.isBull && wt.wt1 >= 55) {
-                sig = "TEPE SAT 🔥";
+                sig = '<span class="badge-tepe" style="font-size:11px;">TEPE SAT 🔥</span>';
                 sigType = "tepe";
             }
 
@@ -294,7 +294,7 @@
 
         if (!w || !d || !h1 || !m5) return null;
 
-        let decision = "DİKKAT / NÖTR ⚠️";
+        let decision = "DİKKAT / NÖTR ⚠️️";
         let decColor = "#d29922";
         let hasSignal = w.sigType !== "neutral" || d.sigType !== "neutral" || h1.sigType !== "neutral" || m5.sigType !== "neutral";
 
@@ -333,32 +333,31 @@
 
     function renderCard(tfName, data) {
         let trendText = data.isTrendBull ? '<span class="bull">YÜKSELİŞ</span>' : '<span class="bear">DÜŞÜŞ</span>';
-        
         let tradeText = data.isTradeBull ? '<span class="bull">BOĞA</span>' : '<span class="bear">AYI</span>';
+        
         let btVal = data.btVal;
         let btSign = btVal >= 0 ? "+" : "";
         let btClass = btVal >= 0 ? "change-pos" : "change-neg";
-        let btHtml = `<span style="font-size: 10px;">BT: <span class="${btClass}">${btSign}${btVal.toFixed(0)}</span></span>`;
+        let btHtml = `<span style="font-size: 11px;">BT: <span class="${btClass}">${btSign}${btVal.toFixed(0)}</span></span>`;
         
-        let sigHtml = '<span class="neutral">SİNYAL: NÖTR</span>';
         let cardClass = "timeframe-card";
-
         if (data.sigType === "dip") {
-            sigHtml = '<span class="badge-dip">DİP AL 💎</span>';
             cardClass += " card-dip";
         } else if (data.sigType === "tepe") {
-            sigHtml = '<span class="badge-tepe">TEPE SAT 🔥</span>';
             cardClass += " card-tepe";
         }
 
         let distVal = data.emaDistPercent;
         let distSign = distVal >= 0 ? "+" : "";
         let distClass = distVal >= 0 ? "change-pos" : "change-neg";
-        let emaDistHtml = `<span style="font-size: 10px;">EMA: <span class="${distClass}">${distSign}${distVal.toFixed(1)}%</span></span>`;
+        let emaDistHtml = `<span style="font-size: 11px;">EMA: <span class="${distClass}">${distSign}${distVal.toFixed(1)}%</span></span>`;
         
         return `
             <div class="${cardClass}">
-                <div class="tf-title">${tfName}</div>
+                <div class="tf-title">
+                    <span>${tfName}</span>
+                    <span>${data.sig}</span>
+                </div>
                 <div class="info-row">
                     <div>TREND: ${trendText}</div>
                     <div>${emaDistHtml}</div>
@@ -367,7 +366,6 @@
                     <div>İŞLEM: ${tradeText}</div>
                     <div>${btHtml}</div>
                 </div>
-                <div style="margin-top: 5px;">${sigHtml}</div>
             </div>
         `;
     }
@@ -413,7 +411,7 @@
                     <td><strong><a href="${binanceUrl}" target="_blank" class="symbol-link">${res.symbol}</a></strong></td>
                     <td>
                         $${priceStr}<br>
-                        <span class="${changeClass}" style="font-size: 11px;">${changeStr}</span>
+                        <span class="${changeClass}" style="font-size: 12px;">${changeStr}</span>
                     </td>
                     <td>
                         <div class="sub-matrix">
@@ -423,7 +421,7 @@
                             ${renderCard("SCALP (5D)", res.tf.m5)}
                         </div>
                     </td>
-                    <td><strong style="color: ${res.decColor}">${res.decision}</strong></td>
+                    <td><strong style="color: ${res.decColor}; font-size: 14px;">${res.decision}</strong></td>
                 </tr>
             `;
         }
@@ -453,21 +451,4 @@
             renderTable();
         }
 
-        let now = new Date();
-        document.getElementById('update-time').innerText = `Son Güncelleme: ${now.toLocaleTimeString()}`;
-        countdown = 60;
-    }
-
-    setInterval(() => {
-        countdown--;
-        document.getElementById('timer').innerText = `Sıradaki Güncelleme: ${countdown}s`;
-        if (countdown <= 0) {
-            fetchAllData();
-        }
-    }, 1000);
-
-    fetchAllData();
-</script>
-
-</body>
-</html>
+        let now
