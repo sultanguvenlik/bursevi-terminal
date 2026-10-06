@@ -241,8 +241,8 @@
 
     async function fetchTFData(symbol, interval) {
         try {
-            // EMA 200 hesaplaması için her periyoda özel yeterli bar limiti (300) tanımlandı
-            let limitVal = (interval === '1w' || interval === '1d') ? 300 : 120;
+            // Günlük ve haftalık veriler için barların UTC kapanış kaymasını önlemek adına limit artırıldı (500 bar)
+            let limitVal = (interval === '1w' || interval === '1d') ? 500 : 120;
             let res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limitVal}`);
             if (!res.ok) return null;
             let data = await res.json();
