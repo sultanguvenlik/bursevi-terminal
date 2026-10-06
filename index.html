@@ -154,7 +154,7 @@
             </tr>
         </thead>
         <tbody id="terminal-body">
-            <tr><td colspan="4" style="text-align: center; color: #58a6ff; padding: 30px;">Majör coinler taranıyor, veriler çekiliyor...</td></tr>
+            <tr><td colspan="4" style="text-align: center; color: #58a6ff; padding: 30px;">Majör coinler taranıyor, veriler güvenli şekilde çekiliyor...</td></tr>
         </tbody>
     </table>
 
@@ -164,7 +164,7 @@
         "ADAUSDT", "BNBUSDT", "AVAXUSDT", "LTCUSDT", "RAYDIUMUSDT"
     ];
 
-    let countdown = 30;
+    let countdown = 60;
     let currentFilter = 'ALL';
     let globalMarketData = [];
 
@@ -256,7 +256,6 @@
             let isTrendBull = currentPrice > ema200;
             let wt = calculateWaveTrend(highs, lows, closes);
 
-            // EMA 200 Uzaklık Yüzdesi Hesaplama
             let emaDistPercent = ((currentPrice - ema200) / ema200) * 100;
 
             let sig = "SİNYAL: NÖTR";
@@ -286,13 +285,12 @@
     }
 
     async function processSymbol(symbol) {
-        let [w, d, h1, m5, change24h] = await Promise.all([
-            fetchTFData(symbol, "1w"),
-            fetchTFData(symbol, "1d"),
-            fetchTFData(symbol, "1h"),
-            fetchTFData(symbol, "5m"),
-            fetch24hrChange(symbol)
-        ]);
+        // İsteklerin rate limit'e takılmasını önlemek için güvenli sıralı yükleme
+        let w = await fetchTFData(symbol, "1w");
+        let d = await fetchTFData(symbol, "1d");
+        let h1 = await fetchTFData(symbol, "1h");
+        let m5 = await fetchTFData(symbol, "5m");
+        let change24h = await fetch24hrChange(symbol);
 
         if (!w || !d || !h1 || !m5) return null;
 
@@ -404,7 +402,9 @@
 
             htmlContent += `
                 <tr>
-                    <td><strong><a href="${binanceUrl}" target="_blank" class="symbol-link">${res.symbol}</a></strong></td>                     <td>                         $${priceStr}<br>
+                    <td><strong><a href="${binanceUrl}" target="_blank" class="symbol-link">${res.symbol}</a></strong></td>
+                    <td>
+                        $${priceStr}<br>
                         <span class="${changeClass}" style="font-size: 11px;">${changeStr}</span>
                     </td>
                     <td>
@@ -428,4 +428,39 @@
 
     async function fetchAllData() {
         let tbody = document.getElementById('terminal-body');
-        tbody.innerHTML = `<tr><td colspan
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #58a6ff; padding: 20px;">Piyasa güvenli şekilde taranıyor, veriler yükleniyor...</td></tr>`;
+
+        let results = [];
+        for (let sym of symbols) {
+            let res = await processSymbol(sym);
+            if (res) results.push(res);
+            // İstekler arası çok kısa bekleme ekleyerek Binance API engelini aşıyoruz
+            await new Promise(r => setTimeout(r, 150));
+        }
+        
+        globalMarketData = results;
+
+        if (globalMarketData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #f85149; padding: 20px;">Veri alınamadı. Lütfen GitHub Pages yayınınızı kontrol edin.</td></tr>`;
+        } else {
+            renderTable();
+        }
+
+        let now = new Date();
+        document.getElementById('update-time').innerText = `Son Güncelleme: ${now.toLocaleTimeString()}`;
+        countdown = 60;
+    }
+
+    setInterval(() => {
+        countdown--;
+        document.getElementById('timer').innerText = `Sıradaki Güncelleme: ${countdown}s`;
+        if (countdown <= 0) {
+            fetchAllData();
+        }
+    }, 1000);
+
+    fetchAllData();
+</script>
+
+</body>
+</html>
