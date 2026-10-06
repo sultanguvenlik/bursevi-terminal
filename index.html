@@ -120,7 +120,7 @@
         .change-neg { color: #f85149; font-weight: bold; }
         .symbol-link { color: #58a6ff; text-decoration: none; font-weight: bold; }
         .symbol-link:hover { text-decoration: underline; }
-        .ema-dist { font-size: 10px; margin-top: 4px; font-weight: 600; }
+        .trend-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     </style>
 </head>
 <body>
@@ -334,7 +334,7 @@
     }
 
     function renderCard(tfName, data) {
-        let trendHtml = data.isTrendBull ? '<span class="bull">TREND: YÜKSELİŞ</span>' : '<span class="bear">TREND: DÜŞÜŞ</span>';
+        let trendText = data.isTrendBull ? '<span class="bull">YÜKSELİŞ</span>' : '<span class="bear">DÜŞÜŞ</span>';
         let tradeHtml = data.isTradeBull ? '<span class="bull">İŞLEM: BOĞA</span>' : '<span class="bear">İŞLEM: AYI</span>';
         
         let sigHtml = '<span class="neutral">SİNYAL: NÖTR</span>';
@@ -351,15 +351,17 @@
         let distVal = data.emaDistPercent;
         let distSign = distVal >= 0 ? "+" : "";
         let distClass = distVal >= 0 ? "change-pos" : "change-neg";
-        let emaDistHtml = `<div class="ema-dist">EMA200 Uza: <span class="${distClass}">${distSign}${distVal.toFixed(2)}%</span></div>`;
+        let emaDistHtml = `<span style="font-size: 10px;">EMA: <span class="${distClass}">${distSign}${distVal.toFixed(1)}%</span></span>`;
         
         return `
             <div class="${cardClass}">
                 <div class="tf-title">${tfName}</div>
-                <div>${trendHtml}</div>
+                <div class="trend-row">
+                    <div>TREND: ${trendText}</div>
+                    <div>${emaDistHtml}</div>
+                </div>
                 <div>${tradeHtml}</div>
                 <div style="margin-top: 5px;">${sigHtml}</div>
-                ${emaDistHtml}
             </div>
         `;
     }
@@ -402,9 +404,7 @@
 
             htmlContent += `
                 <tr>
-                    <td><strong><a href="${binanceUrl}" target="_blank" class="symbol-link">${res.symbol}</a></strong></td>
-                    <td>
-                        $${priceStr}<br>
+                    <td><strong><a href="${binanceUrl}" target="_blank" class="symbol-link">${res.symbol}</a></strong></td>                     <td>                         $${priceStr}<br>
                         <span class="${changeClass}" style="font-size: 11px;">${changeStr}</span>
                     </td>
                     <td>
@@ -428,37 +428,4 @@
 
     async function fetchAllData() {
         let tbody = document.getElementById('terminal-body');
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #58a6ff; padding: 20px;">Piyasa taranıyor, veriler ve yüzdeler hesaplanıyor...</td></tr>`;
-
-        let results = [];
-        for (let sym of symbols) {
-            let res = await processSymbol(sym);
-            if (res) results.push(res);
-        }
-        
-        globalMarketData = results;
-
-        if (globalMarketData.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #f85149; padding: 20px;">Veri alınamadı. Lütfen GitHub Pages yayınınızı kontrol edin.</td></tr>`;
-        } else {
-            renderTable();
-        }
-
-        let now = new Date();
-        document.getElementById('update-time').innerText = `Son Güncelleme: ${now.toLocaleTimeString()}`;
-        countdown = 120;
-    }
-
-    setInterval(() => {
-        countdown--;
-        document.getElementById('timer').innerText = `Sıradaki Güncelleme: ${countdown}s`;
-        if (countdown <= 0) {
-            fetchAllData();
-        }
-    }, 1000);
-
-    fetchAllData();
-</script>
-
-</body>
-</html>
+        tbody.innerHTML = `<tr><td colspan
