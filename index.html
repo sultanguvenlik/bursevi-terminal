@@ -95,7 +95,7 @@
             padding: 10px 14px;
             border-radius: 6px;
             border: 1px solid #30363d;
-            font-size: 13px; /* Kart içi yazı boyutu büyütüldü */
+            font-size: 13px;
             text-align: center;
             transition: all 0.3s ease;
         }
@@ -154,7 +154,7 @@
             </tr>
         </thead>
         <tbody id="terminal-body">
-            <tr><td colspan="4" style="text-align: center; color: #58a6ff; padding: 30px;">Majör coinler taranıyor, veriler güvenli şekilde çekiliyor...</td></tr>
+            <tr><td colspan="4" style="text-align: center; color: #58a6ff; padding: 30px;">Piyasa hızlıca taranıyor...</td></tr>
         </tbody>
     </table>
 
@@ -241,7 +241,7 @@
 
     async function fetchTFData(symbol, interval) {
         try {
-            let res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=250`);
+            let res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=120`);
             if (!res.ok) return null;
             let data = await res.json();
             
@@ -252,7 +252,7 @@
             let lows = data.map(d => parseFloat(d[3]));
             let currentPrice = closes[closes.length - 1];
 
-            let ema200 = calculateEMA(closes, 200);
+            let ema200 = calculateEMA(closes, Math.min(closes.length, 200));
             let isTrendBull = currentPrice > ema200;
             let wt = calculateWaveTrend(highs, lows, closes);
 
@@ -286,15 +286,18 @@
     }
 
     async function processSymbol(symbol) {
-        let w = await fetchTFData(symbol, "1w");
-        let d = await fetchTFData(symbol, "1d");
-        let h1 = await fetchTFData(symbol, "1h");
-        let m5 = await fetchTFData(symbol, "5m");
-        let change24h = await fetch24hrChange(symbol);
+        // Tüm zaman dilimi verilerini eşzamanlı (paralel) ve hızlıca çekiyoruz
+        let [w, d, h1, m5, change24h] = await Promise.all([
+            fetchTFData(symbol, "1w"),
+            fetchTFData(symbol, "1d"),
+            fetchTFData(symbol, "1h"),
+            fetchTFData(symbol, "5m"),
+            fetch24hrChange(symbol)
+        ]);
 
         if (!w || !d || !h1 || !m5) return null;
 
-        let decision = "DİKKAT / NÖTR ⚠️️";
+        let decision = "DİKKAT / NÖTR ⚠️";
         let decColor = "#d29922";
         let hasSignal = w.sigType !== "neutral" || d.sigType !== "neutral" || h1.sigType !== "neutral" || m5.sigType !== "neutral";
 
@@ -434,16 +437,13 @@
 
     async function fetchAllData() {
         let tbody = document.getElementById('terminal-body');
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #58a6ff; padding: 20px;">Piyasa güvenli şekilde taranıyor, veriler yükleniyor...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #58a6ff; padding: 20px;">Piyasa hızla taranıyor, veriler yükleniyor...</td></tr>`;
 
-        let results = [];
-        for (let sym of symbols) {
-            let res = await processSymbol(sym);
-            if (res) results.push(res);
-            await new Promise(r => setTimeout(r, 150));
-        }
+        // Tüm coinleri aynı anda (paralel) çekerek hızı maksimuma çıkarıyoruz
+        let promises = symbols.map(sym => processSymbol(sym));
+        let results = await Promise.all(promises);
         
-        globalMarketData = results;
+        globalMarketData = results.filter(item => item !== null);
 
         if (globalMarketData.length === 0) {
             tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #f85149; padding: 20px;">Veri alınamadı. Lütfen GitHub Pages yayınınızı kontrol edin.</td></tr>`;
@@ -451,4 +451,21 @@
             renderTable();
         }
 
-        let now
+        let now = new Date();
+        document.getElementById('update-time').innerText = `Son Güncelleme: ${now.toLocaleTimeString()}`;
+        countdown = 60;
+    }
+
+    setInterval(() => {
+        countdown--;
+        document.getElementById('timer').innerText = `Sıradaki Güncelleme: ${countdown}s`;
+        if (countdown <= 0) {
+            fetchAllData();
+        }
+    }, 1000);
+
+    fetchAllData();
+</script>
+
+</body>
+</html>
