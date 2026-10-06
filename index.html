@@ -95,7 +95,7 @@
             padding: 12px 14px;
             border-radius: 6px;
             border: 1px solid #30363d;
-            font-size: 13px; /* Genel kart içi font büyütüldü */
+            font-size: 13px;
             text-align: center;
             transition: all 0.3s ease;
         }
@@ -241,7 +241,9 @@
 
     async function fetchTFData(symbol, interval) {
         try {
-            let res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=120`);
+            // EMA 200 hesaplaması için her periyoda özel yeterli bar limiti (300) tanımlandı
+            let limitVal = (interval === '1w' || interval === '1d') ? 300 : 120;
+            let res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limitVal}`);
             if (!res.ok) return null;
             let data = await res.json();
             
