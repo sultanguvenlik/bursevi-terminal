@@ -120,6 +120,7 @@
         .change-neg { color: #f85149; font-weight: bold; }
         .symbol-link { color: #58a6ff; text-decoration: none; font-weight: bold; }
         .symbol-link:hover { text-decoration: underline; }
+        .ema-dist { font-size: 10px; margin-top: 4px; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -255,6 +256,9 @@
             let isTrendBull = currentPrice > ema200;
             let wt = calculateWaveTrend(highs, lows, closes);
 
+            // EMA 200 Uzaklık Yüzdesi Hesaplama
+            let emaDistPercent = ((currentPrice - ema200) / ema200) * 100;
+
             let sig = "SİNYAL: NÖTR";
             let sigType = "neutral";
             if (wt.isBull && wt.wt1 <= -55) {
@@ -265,7 +269,7 @@
                 sigType = "tepe";
             }
 
-            return { isTrendBull, isTradeBull: wt.isBull, sig, sigType, price: currentPrice };
+            return { isTrendBull, isTradeBull: wt.isBull, sig, sigType, price: currentPrice, emaDistPercent };
         } catch (e) {
             return null;
         }
@@ -343,6 +347,11 @@
             sigHtml = '<span class="badge-tepe">TEPE SAT 🔥</span>';
             cardClass += " card-tepe";
         }
+
+        let distVal = data.emaDistPercent;
+        let distSign = distVal >= 0 ? "+" : "";
+        let distClass = distVal >= 0 ? "change-pos" : "change-neg";
+        let emaDistHtml = `<div class="ema-dist">EMA200 Uza: <span class="${distClass}">${distSign}${distVal.toFixed(2)}%</span></div>`;
         
         return `
             <div class="${cardClass}">
@@ -350,6 +359,7 @@
                 <div>${trendHtml}</div>
                 <div>${tradeHtml}</div>
                 <div style="margin-top: 5px;">${sigHtml}</div>
+                ${emaDistHtml}
             </div>
         `;
     }
