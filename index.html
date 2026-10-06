@@ -120,7 +120,7 @@
         .change-neg { color: #f85149; font-weight: bold; }
         .symbol-link { color: #58a6ff; text-decoration: none; font-weight: bold; }
         .symbol-link:hover { text-decoration: underline; }
-        .trend-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     </style>
 </head>
 <body>
@@ -257,6 +257,7 @@
             let wt = calculateWaveTrend(highs, lows, closes);
 
             let emaDistPercent = ((currentPrice - ema200) / ema200) * 100;
+            let btVal = wt.wt1; // Bursevi Trend (WaveTrend) osilatör değeri
 
             let sig = "SİNYAL: NÖTR";
             let sigType = "neutral";
@@ -268,7 +269,7 @@
                 sigType = "tepe";
             }
 
-            return { isTrendBull, isTradeBull: wt.isBull, sig, sigType, price: currentPrice, emaDistPercent };
+            return { isTrendBull, isTradeBull: wt.isBull, sig, sigType, price: currentPrice, emaDistPercent, btVal };
         } catch (e) {
             return null;
         }
@@ -285,7 +286,6 @@
     }
 
     async function processSymbol(symbol) {
-        // İsteklerin rate limit'e takılmasını önlemek için güvenli sıralı yükleme
         let w = await fetchTFData(symbol, "1w");
         let d = await fetchTFData(symbol, "1d");
         let h1 = await fetchTFData(symbol, "1h");
@@ -333,7 +333,12 @@
 
     function renderCard(tfName, data) {
         let trendText = data.isTrendBull ? '<span class="bull">YÜKSELİŞ</span>' : '<span class="bear">DÜŞÜŞ</span>';
-        let tradeHtml = data.isTradeBull ? '<span class="bull">İŞLEM: BOĞA</span>' : '<span class="bear">İŞLEM: AYI</span>';
+        
+        let tradeText = data.isTradeBull ? '<span class="bull">BOĞA</span>' : '<span class="bear">AYI</span>';
+        let btVal = data.btVal;
+        let btSign = btVal >= 0 ? "+" : "";
+        let btClass = btVal >= 0 ? "change-pos" : "change-neg";
+        let btHtml = `<span style="font-size: 10px;">BT: <span class="${btClass}">${btSign}${btVal.toFixed(0)}</span></span>`;
         
         let sigHtml = '<span class="neutral">SİNYAL: NÖTR</span>';
         let cardClass = "timeframe-card";
@@ -354,11 +359,14 @@
         return `
             <div class="${cardClass}">
                 <div class="tf-title">${tfName}</div>
-                <div class="trend-row">
+                <div class="info-row">
                     <div>TREND: ${trendText}</div>
                     <div>${emaDistHtml}</div>
                 </div>
-                <div>${tradeHtml}</div>
+                <div class="info-row">
+                    <div>İŞLEM: ${tradeText}</div>
+                    <div>${btHtml}</div>
+                </div>
                 <div style="margin-top: 5px;">${sigHtml}</div>
             </div>
         `;
@@ -434,7 +442,6 @@
         for (let sym of symbols) {
             let res = await processSymbol(sym);
             if (res) results.push(res);
-            // İstekler arası çok kısa bekleme ekleyerek Binance API engelini aşıyoruz
             await new Promise(r => setTimeout(r, 150));
         }
         
